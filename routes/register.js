@@ -163,14 +163,22 @@ router.post("/login", async function (req, res, next) {
     const user = await modelRegister.findOne({ Email });
 
     if (!user) {
-      return res.json({ status: 0, message: "Người dùng không tồn tại" });
+      return res.status(422).json({
+        error: true,
+        statusCode: 422,
+        message: "Người dùng không tồn tại",
+      });
     }
 
     // So sánh mật khẩu đã nhập với mật khẩu đã lưu trong cơ sở dữ liệu
     const isPasswordMatch = await bcrypt.compare(Password, user.Password);
 
     if (!isPasswordMatch) {
-      return res.json({ status: 0, message: "Mật khẩu không chính xác" });
+      return res.status(422).json({
+        error: true,
+        statusCode: 422,
+        message: "Mật khẩu không chính xác",
+      });
     }
 
     // Tạo token xác thực
@@ -178,7 +186,8 @@ router.post("/login", async function (req, res, next) {
 
     // Trả về thông tin người dùng và token
     res.json({
-      status: 1,
+      error: false,
+      statusCode: 200,
       message: "Đăng nhập thành công",
       user: {
         id: user._id,
@@ -201,9 +210,14 @@ router.post("/login", async function (req, res, next) {
       },
       token: token,
     });
-  } catch (err) {
-    console.error(err); // Ghi log lỗi cho mục đích gỡ lỗi
-    res.json({ status: 0, message: "Đăng nhập thất bại", error: err.message });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: true,
+      statusCode: 500,
+      message: "Đăng nhập thất bại",
+      error: error.message,
+    });
   }
 });
 
