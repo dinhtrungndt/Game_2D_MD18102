@@ -21,7 +21,7 @@ router.post("/add-register", async function (req, res, next) {
     // Kiểm tra xem người dùng có tồn tại trong cơ sở dữ liệu hay không
     const existingUser = await modelRegister.findOne({ Email });
     if (existingUser) {
-      return res.json({ status: 0, message: "Email đã tồn tại" });
+      return res.json({ status: 0, notification: "Email đã tồn tại" });
     }
 
     // Hash mật khẩu trước khi lưu vào cơ sở dữ liệu
@@ -49,10 +49,14 @@ router.post("/add-register", async function (req, res, next) {
     };
 
     await modelRegister.create(Data);
-    res.json({ status: 1, message: "Đăng ký thành công", Data });
+    res.json({ status: 1, notification: "Đăng ký thành công", Data });
   } catch (err) {
     console.error(err); // Ghi log lỗi cho mục đích gỡ lỗi
-    res.json({ status: 0, message: "Đăng ký thất bại", error: err.message });
+    res.json({
+      status: 0,
+      notification: "Đăng ký thất bại",
+      error: err.notification,
+    });
   }
 });
 
@@ -64,13 +68,13 @@ router.put("/update-register/:id", async function (req, res, next) {
 
     // Kiểm tra xem id có đúng định dạng ObjectId hay không
     if (!mongoose.isValidObjectId(id)) {
-      return res.json({ status: 0, message: "Id không hợp lệ" });
+      return res.json({ status: 0, notification: "Id không hợp lệ" });
     }
 
     // Tìm người dùng trong cơ sở dữ liệu dựa trên id
     const user = await modelRegister.findById(id);
     if (!user) {
-      return res.json({ status: 0, message: "Người dùng không tồn tại" });
+      return res.json({ status: 0, notification: "Người dùng không tồn tại" });
     }
 
     // Các bước cập nhật thông tin người dùng
@@ -124,10 +128,14 @@ router.put("/update-register/:id", async function (req, res, next) {
 
     await user.save();
 
-    res.json({ status: 1, message: "Cập nhật thành công", Data: user });
+    res.json({ status: 1, notification: "Cập nhật thành công", Data: user });
   } catch (err) {
     console.error(err); // Ghi log lỗi cho mục đích gỡ lỗi
-    res.json({ status: 0, message: "Cập nhật thất bại", error: err.message });
+    res.json({
+      status: 0,
+      notification: "Cập nhật thất bại",
+      error: err.notification,
+    });
   }
 });
 
@@ -145,10 +153,14 @@ router.delete("/delete-register", async function (req, res, next) {
 
     await modelRegister.deleteOne({ _id: id }, Data);
 
-    res.json({ status: 1, message: "Xóa thành công", Data });
+    res.json({ status: 1, notification: "Xóa thành công", Data });
   } catch (err) {
     console.error(err); // Ghi log lỗi cho mục đích gỡ lỗi
-    res.json({ status: 0, message: "Xóa thất bại", error: err.message });
+    res.json({
+      status: 0,
+      notification: "Xóa thất bại",
+      error: err.notification,
+    });
   }
 });
 
@@ -163,22 +175,14 @@ router.post("/login", async function (req, res, next) {
     const user = await modelRegister.findOne({ Email });
 
     if (!user) {
-      return res.status(422).json({
-        error: true,
-        statusCode: 422,
-        message: "Người dùng không tồn tại",
-      });
+      return res.json({ status: 0, notification: "Người dùng không tồn tại" });
     }
 
     // So sánh mật khẩu đã nhập với mật khẩu đã lưu trong cơ sở dữ liệu
     const isPasswordMatch = await bcrypt.compare(Password, user.Password);
 
     if (!isPasswordMatch) {
-      return res.status(422).json({
-        error: true,
-        statusCode: 422,
-        message: "Mật khẩu không chính xác",
-      });
+      return res.json({ status: 0, notification: "Mật khẩu không chính xác" });
     }
 
     // Tạo token xác thực
@@ -186,9 +190,8 @@ router.post("/login", async function (req, res, next) {
 
     // Trả về thông tin người dùng và token
     res.json({
-      error: false,
-      statusCode: 200,
-      message: "Đăng nhập thành công",
+      status: 1,
+      notification: "Đăng nhập thành công",
       user: {
         id: user._id,
         Email: user.Email,
@@ -210,13 +213,12 @@ router.post("/login", async function (req, res, next) {
       },
       token: token,
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      error: true,
-      statusCode: 500,
-      message: "Đăng nhập thất bại",
-      error: error.message,
+  } catch (err) {
+    console.error(err);
+    res.json({
+      status: 0,
+      notification: "Đăng nhập thất bại",
+      error: err.notification,
     });
   }
 });
